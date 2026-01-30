@@ -22,11 +22,11 @@ function showHome() {
   document.title = 'Fogchan - Private Ephemeral Chat';
 }
 
-function showChat(roomId: string, secretKey: string) {
+async function showChat(roomId: string, secretKey: string) {
   homeView.style.display = 'none';
   chatView.style.display = 'flex';
   document.title = 'Fogchan - Chat Room';
-  initChat(roomId, secretKey);
+  await initChat(roomId, secretKey);
 }
 
 function handleRoute() {

@@ -6,8 +6,12 @@ import {
   encryptMessage,
   decryptMessage,
   buildUrl,
+  createSignedPayload,
+  verifyPayload,
+  getOrCreateIdentityKeyPair,
+  getPublicKeyFingerprint,
   type PlaintextMessage,
-  type EncryptedPayload,
+  type IdentityKeyPair,
 } from './lib/crypto';
 import {
   getRoomInfo,
@@ -26,6 +30,8 @@ interface DisplayMessage extends PlaintextMessage {
 let roomId: string = '';
 let secretKey: string = '';
 let nickname: string = '';
+let identity: IdentityKeyPair | null = null;
+let myFingerprint: string = '';
 let lastTimestamp: number = 0;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 const displayedMessages = new Set<string>();
@@ -52,7 +58,7 @@ let setNicknameBtn: HTMLButtonElement;
 
 let listenersAttached = false;
 
-export function initChat(newRoomId: string, newSecretKey: string) {
+export async function initChat(newRoomId: string, newSecretKey: string) {
   roomId = newRoomId;
   secretKey = newSecretKey;
   lastTimestamp = 0;
@@ -88,6 +94,14 @@ export function initChat(newRoomId: string, newSecretKey: string) {
   messageInput.disabled = true;
   sendMessageBtn.disabled = true;
   nicknameInput.value = '';
+
+  // Initialize identity
+  try {
+    identity = await getOrCreateIdentityKeyPair();
+    myFingerprint = await getPublicKeyFingerprint(identity.publicKey);
+  } catch (error) {
+    console.error('Failed to initialize identity:', error);
+  }
 
   // Load room info and start polling
   loadRoomInfo();
@@ -184,13 +198,17 @@ async function poll() {
 
       try {
         const payload = await decryptMessage(msg.ciphertext, msg.iv, secretKey);
+        const verified = await verifyPayload(payload, msg.id, msg.timestamp);
         const displayMsg: DisplayMessage = {
           id: msg.id,
-          sender: payload.sender,
-          content: payload.content,
-          timestamp: msg.timestamp,
-          type: payload.type,
+          sender: verified.sender,
+          content: verified.content,
+          timestamp: verified.timestamp,
+          type: verified.type,
           ciphertext: msg.ciphertext,
+          publicKey: verified.publicKey,
+          fingerprint: verified.fingerprint,
+          verified: verified.verified,
         };
         renderMessage(displayMsg);
       } catch (e) {
@@ -226,9 +244,29 @@ function renderMessage(msg: DisplayMessage, status?: 'sending' | 'sent' | 'faile
     const header = document.createElement('div');
     header.className = 'message-header';
 
-    const sender = document.createElement('span');
-    sender.className = 'message-sender';
-    sender.textContent = msg.sender;
+    const senderContainer = document.createElement('span');
+    senderContainer.className = 'message-sender';
+
+    // Sender name
+    const senderName = document.createElement('span');
+    senderName.textContent = msg.sender;
+    senderContainer.appendChild(senderName);
+
+    // Fingerprint badge
+    if (msg.fingerprint) {
+      const fingerprint = document.createElement('span');
+      fingerprint.className = 'message-fingerprint';
+      fingerprint.textContent = `[${msg.fingerprint}]`;
+      fingerprint.title = 'Identity fingerprint';
+      senderContainer.appendChild(fingerprint);
+
+      // Verification icon
+      const verifyIcon = document.createElement('span');
+      verifyIcon.className = msg.verified ? 'verify-icon verified' : 'verify-icon unverified';
+      verifyIcon.textContent = msg.verified ? '✓' : '✗';
+      verifyIcon.title = msg.verified ? 'Signature verified' : 'Signature invalid';
+      senderContainer.appendChild(verifyIcon);
+    }
 
     const headerRight = document.createElement('div');
     headerRight.className = 'message-header-right';
@@ -258,7 +296,7 @@ function renderMessage(msg: DisplayMessage, status?: 'sending' | 'sent' | 'faile
     headerRight.appendChild(time);
     headerRight.appendChild(lockBtn);
 
-    header.appendChild(sender);
+    header.appendChild(senderContainer);
     header.appendChild(headerRight);
 
     const content = document.createElement('div');
@@ -472,7 +510,12 @@ function confirmNickname() {
     return;
   }
   nickname = name;
-  currentNicknameSpan.textContent = nickname;
+  // Display nickname with fingerprint
+  if (myFingerprint) {
+    currentNicknameSpan.innerHTML = `${nickname} <span class="my-fingerprint">[${myFingerprint}]</span>`;
+  } else {
+    currentNicknameSpan.textContent = nickname;
+  }
   messageInput.disabled = false;
   sendMessageBtn.disabled = false;
   hideNicknameModal();
@@ -482,7 +525,7 @@ function confirmNickname() {
 let pendingMessageId = 0;
 
 async function sendChatMessage() {
-  if (!roomId || !secretKey || !nickname) return;
+  if (!roomId || !secretKey || !nickname || !identity) return;
 
   const content = messageInput.value.trim();
   if (!content) return;
@@ -503,15 +546,21 @@ async function sendChatMessage() {
     timestamp,
     type: 'text',
     ciphertext: '(encrypting...)',
+    publicKey: identity.publicKey,
+    fingerprint: myFingerprint,
+    verified: true, // Own message is always verified
   };
   renderMessage(tempMsg, 'sending');
 
   try {
-    const payload: EncryptedPayload = {
-      sender: nickname,
+    // Create signed payload
+    const payload = await createSignedPayload(
+      nickname,
       content,
-      type: 'text',
-    };
+      'text',
+      identity.privateKey,
+      identity.publicKey
+    );
 
     const { ciphertext, iv } = await encryptMessage(payload, secretKey);
 

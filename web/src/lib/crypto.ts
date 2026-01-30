@@ -6,10 +6,22 @@ const ALGORITHM = 'AES-GCM';
 const KEY_LENGTH = 256;
 const IV_LENGTH = 12;
 
+const ECDSA_ALGORITHM = {
+  name: 'ECDSA',
+  namedCurve: 'P-256',
+};
+
+const ECDSA_SIGN_ALGORITHM = {
+  name: 'ECDSA',
+  hash: 'SHA-256',
+};
+
 export interface EncryptedPayload {
   sender: string;
   content: string;
   type: 'text' | 'system';
+  publicKey?: string;
+  signature?: string;
 }
 
 export interface PlaintextMessage {
@@ -18,6 +30,9 @@ export interface PlaintextMessage {
   content: string;
   timestamp: number;
   type: 'text' | 'system';
+  publicKey?: string;
+  fingerprint?: string;
+  verified?: boolean;
 }
 
 export interface Credentials {
@@ -28,6 +43,11 @@ export interface Credentials {
 export interface EncryptResult {
   ciphertext: string;
   iv: string;
+}
+
+export interface IdentityKeyPair {
+  publicKey: string;
+  privateKey: string;
 }
 
 function bytesToHex(bytes: Uint8Array): string {
@@ -54,6 +74,10 @@ function bytesToBase64(bytes: Uint8Array): string {
 function base64ToBytes(str: string): Uint8Array {
   return Uint8Array.from(atob(str), c => c.charCodeAt(0));
 }
+
+// ============================================
+// AES Encryption
+// ============================================
 
 export async function generateCredentials(): Promise<Credentials> {
   const roomIdBytes = crypto.getRandomValues(new Uint8Array(16));
@@ -117,6 +141,172 @@ export async function decryptMessage(
   const plaintext = new TextDecoder().decode(decrypted);
   return JSON.parse(plaintext);
 }
+
+// ============================================
+// ECDSA Identity & Signing
+// ============================================
+
+export async function generateIdentityKeyPair(): Promise<IdentityKeyPair> {
+  const keyPair = await crypto.subtle.generateKey(
+    ECDSA_ALGORITHM,
+    true,
+    ['sign', 'verify']
+  );
+
+  const publicKeyBuffer = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+  const privateKeyBuffer = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+
+  return {
+    publicKey: bytesToBase64(new Uint8Array(publicKeyBuffer)),
+    privateKey: bytesToBase64(new Uint8Array(privateKeyBuffer)),
+  };
+}
+
+async function importPublicKey(publicKeyBase64: string): Promise<CryptoKey> {
+  const keyBytes = base64ToBytes(publicKeyBase64);
+  return crypto.subtle.importKey(
+    'spki',
+    keyBytes,
+    ECDSA_ALGORITHM,
+    false,
+    ['verify']
+  );
+}
+
+async function importPrivateKey(privateKeyBase64: string): Promise<CryptoKey> {
+  const keyBytes = base64ToBytes(privateKeyBase64);
+  return crypto.subtle.importKey(
+    'pkcs8',
+    keyBytes,
+    ECDSA_ALGORITHM,
+    false,
+    ['sign']
+  );
+}
+
+export async function signMessage(
+  content: string,
+  privateKeyBase64: string
+): Promise<string> {
+  const privateKey = await importPrivateKey(privateKeyBase64);
+  const data = new TextEncoder().encode(content);
+
+  const signature = await crypto.subtle.sign(
+    ECDSA_SIGN_ALGORITHM,
+    privateKey,
+    data
+  );
+
+  return bytesToBase64(new Uint8Array(signature));
+}
+
+export async function verifySignature(
+  content: string,
+  signatureBase64: string,
+  publicKeyBase64: string
+): Promise<boolean> {
+  try {
+    const publicKey = await importPublicKey(publicKeyBase64);
+    const data = new TextEncoder().encode(content);
+    const signature = base64ToBytes(signatureBase64);
+
+    return crypto.subtle.verify(
+      ECDSA_SIGN_ALGORITHM,
+      publicKey,
+      signature,
+      data
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function getPublicKeyFingerprint(publicKeyBase64: string): Promise<string> {
+  const keyBytes = base64ToBytes(publicKeyBase64);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', keyBytes);
+  const hashHex = bytesToHex(new Uint8Array(hashBuffer));
+  return hashHex.slice(0, 4);
+}
+
+export async function createSignedPayload(
+  sender: string,
+  content: string,
+  type: 'text' | 'system',
+  privateKeyBase64: string,
+  publicKeyBase64: string
+): Promise<EncryptedPayload> {
+  const dataToSign = `${sender}:${content}`;
+  const signature = await signMessage(dataToSign, privateKeyBase64);
+
+  return {
+    sender,
+    content,
+    type,
+    publicKey: publicKeyBase64,
+    signature,
+  };
+}
+
+export async function verifyPayload(
+  payload: EncryptedPayload,
+  messageId: string,
+  timestamp: number
+): Promise<PlaintextMessage> {
+  let verified = false;
+  let fingerprint: string | undefined;
+
+  if (payload.publicKey && payload.signature) {
+    const dataToVerify = `${payload.sender}:${payload.content}`;
+    verified = await verifySignature(dataToVerify, payload.signature, payload.publicKey);
+    fingerprint = await getPublicKeyFingerprint(payload.publicKey);
+  }
+
+  return {
+    id: messageId,
+    sender: payload.sender,
+    content: payload.content,
+    timestamp,
+    type: payload.type,
+    publicKey: payload.publicKey,
+    fingerprint,
+    verified,
+  };
+}
+
+// ============================================
+// Identity Storage (localStorage)
+// ============================================
+
+const IDENTITY_STORAGE_KEY = 'fogchan_identity';
+
+export function loadIdentityKeyPair(): IdentityKeyPair | null {
+  const stored = localStorage.getItem(IDENTITY_STORAGE_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+export function saveIdentityKeyPair(keyPair: IdentityKeyPair): void {
+  localStorage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(keyPair));
+}
+
+export async function getOrCreateIdentityKeyPair(): Promise<IdentityKeyPair> {
+  let keyPair = loadIdentityKeyPair();
+  if (!keyPair) {
+    keyPair = await generateIdentityKeyPair();
+    saveIdentityKeyPair(keyPair);
+  }
+  return keyPair;
+}
+
+// ============================================
+// URL Utilities
+// ============================================
 
 /**
  * Parse hash URL: #/chat/{roomId}/{secretKey}

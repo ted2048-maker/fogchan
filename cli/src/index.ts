@@ -11,7 +11,12 @@ import {
   generateCredentials,
   encryptMessage,
   decryptMessage,
+  createSignedPayload,
+  verifyPayload,
+  getOrCreateIdentityKeyPair,
+  getPublicKeyFingerprint,
   type EncryptedPayload,
+  type IdentityKeyPair,
 } from './crypto';
 import { ApiClient } from './api';
 
@@ -29,10 +34,18 @@ function formatTime(timestamp: number): string {
   });
 }
 
+function formatSender(sender: string, fingerprint?: string, verified?: boolean): string {
+  if (fingerprint) {
+    const verifyIcon = verified ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m';
+    return `${sender} \x1b[90m[${fingerprint}]\x1b[0m ${verifyIcon}`;
+  }
+  return sender;
+}
+
 program
   .name('fogchan')
   .description('Fogchan - Client-side encrypted ephemeral chat CLI')
-  .version('1.0.10')
+  .version('1.0.11')
   .addHelpText('after', `
 Common Options:
   -n, --name <name>     Your nickname (default: ${DEFAULT_NAME})
@@ -45,6 +58,10 @@ Examples:
   $ fogchan send <roomId> <secretKey> "Hello!" --name "Bot"
   $ fogchan listen <roomId> <secretKey>
   $ fogchan history <roomId> <secretKey> --limit 100
+
+Identity:
+  Your identity key is stored in ~/.fogchan/identity.json
+  Messages are signed with your private key for verification.
 
 Environment Variables:
   FOGCHAN_DEFAULT_NAME   Default nickname
@@ -87,6 +104,17 @@ program
     const api = new ApiClient(options.server);
     const name = options.name;
 
+    // Get or create identity key pair
+    let identity: IdentityKeyPair;
+    try {
+      identity = await getOrCreateIdentityKeyPair();
+      const fingerprint = await getPublicKeyFingerprint(identity.publicKey);
+      console.log(`\x1b[90mIdentity: [${fingerprint}]\x1b[0m`);
+    } catch (error) {
+      console.error(`\x1b[31m✗ Failed to load identity: ${(error as Error).message}\x1b[0m`);
+      process.exit(1);
+    }
+
     try {
       await api.getRoomInfo(roomId);
       console.log(`\x1b[32m✓ Connected as ${name}\x1b[0m`);
@@ -122,13 +150,15 @@ program
 
           try {
             const payload = await decryptMessage(msg.ciphertext, msg.iv, secretKey);
+            const verified = await verifyPayload(payload, msg.id, msg.timestamp);
             const time = formatTime(msg.timestamp);
 
             if (payload.type === 'system') {
               printMessage(`\x1b[90m[${time}] ${payload.content}\x1b[0m`);
             } else {
+              const senderDisplay = formatSender(payload.sender, verified.fingerprint, verified.verified);
               const senderColor = payload.sender === name ? '\x1b[36m' : '\x1b[33m';
-              printMessage(`\x1b[90m[${time}]\x1b[0m ${senderColor}${payload.sender}:\x1b[0m ${payload.content}`);
+              printMessage(`\x1b[90m[${time}]\x1b[0m ${senderColor}${senderDisplay}:\x1b[0m ${payload.content}`);
             }
           } catch {
             printMessage(`\x1b[31m[${formatTime(msg.timestamp)}] Unable to decrypt message\x1b[0m`);
@@ -173,11 +203,13 @@ program
       // Fire and forget - don't block input
       (async () => {
         try {
-          const payload: EncryptedPayload = {
-            sender: name,
+          const payload = await createSignedPayload(
+            name,
             content,
-            type: 'text',
-          };
+            'text',
+            identity.privateKey,
+            identity.publicKey
+          );
 
           const { ciphertext, iv } = await encryptMessage(payload, secretKey);
           await api.sendMessage(roomId, ciphertext, iv);
@@ -208,11 +240,14 @@ program
     const api = new ApiClient(options.server);
 
     try {
-      const payload: EncryptedPayload = {
-        sender: options.name,
-        content: message,
-        type: 'text',
-      };
+      const identity = await getOrCreateIdentityKeyPair();
+      const payload = await createSignedPayload(
+        options.name,
+        message,
+        'text',
+        identity.privateKey,
+        identity.publicKey
+      );
 
       const { ciphertext, iv } = await encryptMessage(payload, secretKey);
       await api.sendMessage(roomId, ciphertext, iv);
@@ -253,12 +288,14 @@ program
 
           try {
             const payload = await decryptMessage(msg.ciphertext, msg.iv, secretKey);
+            const verified = await verifyPayload(payload, msg.id, msg.timestamp);
             const time = formatTime(msg.timestamp);
 
             if (payload.type === 'system') {
               console.log(`\x1b[90m[${time}] ${payload.content}\x1b[0m`);
             } else {
-              console.log(`\x1b[90m[${time}]\x1b[0m \x1b[33m${payload.sender}:\x1b[0m ${payload.content}`);
+              const senderDisplay = formatSender(payload.sender, verified.fingerprint, verified.verified);
+              console.log(`\x1b[90m[${time}]\x1b[0m \x1b[33m${senderDisplay}:\x1b[0m ${payload.content}`);
             }
           } catch {
             console.log(`\x1b[31m[${formatTime(msg.timestamp)}] Unable to decrypt message\x1b[0m`);
@@ -310,12 +347,14 @@ program
       for (const msg of messages) {
         try {
           const payload = await decryptMessage(msg.ciphertext, msg.iv, secretKey);
+          const verified = await verifyPayload(payload, msg.id, msg.timestamp);
           const time = formatTime(msg.timestamp);
 
           if (payload.type === 'system') {
             console.log(`\x1b[90m[${time}] ${payload.content}\x1b[0m`);
           } else {
-            console.log(`\x1b[90m[${time}]\x1b[0m \x1b[33m${payload.sender}:\x1b[0m ${payload.content}`);
+            const senderDisplay = formatSender(payload.sender, verified.fingerprint, verified.verified);
+            console.log(`\x1b[90m[${time}]\x1b[0m \x1b[33m${senderDisplay}:\x1b[0m ${payload.content}`);
           }
         } catch {
           console.log(`\x1b[31m[${formatTime(msg.timestamp)}] Unable to decrypt message\x1b[0m`);
@@ -382,6 +421,22 @@ program
     try {
       await api.clearMessages(roomId);
       console.log('\x1b[32m✓ Messages cleared\x1b[0m');
+    } catch (error) {
+      console.error(`\x1b[31m✗ Error: ${(error as Error).message}\x1b[0m`);
+      process.exit(1);
+    }
+  });
+
+// Show identity
+program
+  .command('identity')
+  .description('Show your identity fingerprint')
+  .action(async () => {
+    try {
+      const identity = await getOrCreateIdentityKeyPair();
+      const fingerprint = await getPublicKeyFingerprint(identity.publicKey);
+      console.log(`\nYour identity fingerprint: \x1b[36m[${fingerprint}]\x1b[0m`);
+      console.log(`\x1b[90mStored in: ~/.fogchan/identity.json\x1b[0m\n`);
     } catch (error) {
       console.error(`\x1b[31m✗ Error: ${(error as Error).message}\x1b[0m`);
       process.exit(1);
