@@ -126,22 +126,25 @@ program
       output: process.stdout,
     });
 
-    rl.on('line', async (line) => {
+    rl.on('line', (line) => {
       const content = line.trim();
       if (!content) return;
 
-      try {
-        const payload: EncryptedPayload = {
-          sender: name,
-          content,
-          type: 'text',
-        };
+      // Fire and forget - don't block input
+      (async () => {
+        try {
+          const payload: EncryptedPayload = {
+            sender: name,
+            content,
+            type: 'text',
+          };
 
-        const { ciphertext, iv } = await encryptMessage(payload, secretKey);
-        await api.sendMessage(roomId, ciphertext, iv);
-      } catch (error) {
-        console.error(`\x1b[31m✗ Failed to send: ${(error as Error).message}\x1b[0m`);
-      }
+          const { ciphertext, iv } = await encryptMessage(payload, secretKey);
+          await api.sendMessage(roomId, ciphertext, iv);
+        } catch (error) {
+          console.error(`\x1b[31m✗ Failed to send: ${(error as Error).message}\x1b[0m`);
+        }
+      })();
     });
 
     rl.on('close', () => {
