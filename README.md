@@ -1,6 +1,8 @@
-# Fogchan
+<p align="center">
+  <img src="logo.svg" alt="Fogchan" width="120" height="120">
+</p>
 
-<img src="logo.svg" alt="Fogchan" width="120" height="120">
+# Fogchan
 
 Client-side encrypted ephemeral chat. The server stores only encrypted ciphertext - it cannot read your messages.
 
