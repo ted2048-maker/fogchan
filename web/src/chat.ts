@@ -228,7 +228,8 @@ async function poll() {
 function renderMessage(msg: DisplayMessage, status?: 'sending' | 'sent' | 'failed') {
   const div = document.createElement('div');
   div.dataset.messageId = msg.id;
-  const isOwn = msg.sender === nickname;
+  // Identify by fingerprint (public key hash), not by nickname
+  const isOwn = msg.fingerprint ? msg.fingerprint === myFingerprint : false;
 
   if (msg.type === 'system') {
     div.className = 'message system';

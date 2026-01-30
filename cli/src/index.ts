@@ -45,7 +45,7 @@ function formatSender(sender: string, fingerprint?: string, verified?: boolean):
 program
   .name('fogchan')
   .description('Fogchan - Client-side encrypted ephemeral chat CLI')
-  .version('1.0.11')
+  .version('1.0.12')
   .addHelpText('after', `
 Common Options:
   -n, --name <name>     Your nickname (default: ${DEFAULT_NAME})
@@ -106,10 +106,11 @@ program
 
     // Get or create identity key pair
     let identity: IdentityKeyPair;
+    let myFingerprint: string;
     try {
       identity = await getOrCreateIdentityKeyPair();
-      const fingerprint = await getPublicKeyFingerprint(identity.publicKey);
-      console.log(`\x1b[90mIdentity: [${fingerprint}]\x1b[0m`);
+      myFingerprint = await getPublicKeyFingerprint(identity.publicKey);
+      console.log(`\x1b[90mIdentity: [${myFingerprint}]\x1b[0m`);
     } catch (error) {
       console.error(`\x1b[31m✗ Failed to load identity: ${(error as Error).message}\x1b[0m`);
       process.exit(1);
@@ -157,7 +158,9 @@ program
               printMessage(`\x1b[90m[${time}] ${payload.content}\x1b[0m`);
             } else {
               const senderDisplay = formatSender(payload.sender, verified.fingerprint, verified.verified);
-              const senderColor = payload.sender === name ? '\x1b[36m' : '\x1b[33m';
+              // Identify by fingerprint (public key hash), not by nickname
+              const isOwn = verified.fingerprint === myFingerprint;
+              const senderColor = isOwn ? '\x1b[36m' : '\x1b[33m';
               printMessage(`\x1b[90m[${time}]\x1b[0m ${senderColor}${senderDisplay}:\x1b[0m ${payload.content}`);
             }
           } catch {
