@@ -24,7 +24,7 @@
     "type": "git",
     "url": "https://github.com/ted2048-maker/fogchan.git"
   },
-  "homepage": "https://github.com/ted2048-maker/fogchan#readme",
+  "homepage": "https://fogchat.pinit.eth.limo/",
   "dependencies": {
     "commander": "^12.0.0",
     "readline": "^1.3.0"
