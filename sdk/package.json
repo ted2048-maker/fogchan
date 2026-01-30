@@ -1,7 +1,7 @@
 {
   "name": "fogchan-sdk",
   "version": "1.0.0",
-  "description": "JavaScript SDK for Fogchan end-to-end encrypted chat",
+  "description": "JavaScript SDK for Fogchan client-side encrypted chat",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
   },
   "keywords": [
     "chat",
-    "e2e",
+    "client-side",
     "encryption",
     "ephemeral",
     "fogchan"

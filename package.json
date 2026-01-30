@@ -2,7 +2,7 @@
   "name": "fogchan",
   "version": "1.0.0",
   "private": true,
-  "description": "End-to-end encrypted ephemeral chat system",
+  "description": "Client-side encrypted ephemeral chat system",
   "scripts": {
     "build": "npm run build:shared && npm run build:worker && npm run build:web && npm run build:sdk && npm run build:cli",
     "build:shared": "cd shared && npm run build",

@@ -2,7 +2,7 @@
 
 /**
  * Fogchan CLI
- * Command-line tool for end-to-end encrypted ephemeral chat
+ * Command-line tool for client-side encrypted ephemeral chat
  */
 
 import { program } from 'commander';
@@ -31,8 +31,8 @@ function formatTime(timestamp: number): string {
 
 program
   .name('fogchan')
-  .description('Fogchan - End-to-end encrypted ephemeral chat CLI')
-  .version('1.0.4')
+  .description('Fogchan - Client-side encrypted ephemeral chat CLI')
+  .version('1.0.8')
   .addHelpText('after', `
 Common Options:
   -n, --name <name>     Your nickname (default: ${DEFAULT_NAME})

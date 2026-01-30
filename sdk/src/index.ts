@@ -1,6 +1,6 @@
 /**
  * Fogchan SDK
- * JavaScript SDK for end-to-end encrypted ephemeral chat
+ * JavaScript SDK for client-side encrypted ephemeral chat
  */
 
 import { EventEmitter } from 'events';

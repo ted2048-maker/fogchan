@@ -1,6 +1,6 @@
 /**
  * Fogchan Crypto Library
- * AES-256-GCM encryption for end-to-end encrypted chat
+ * AES-256-GCM encryption for client-side encrypted chat
  */
 
 const ALGORITHM = 'AES-GCM';

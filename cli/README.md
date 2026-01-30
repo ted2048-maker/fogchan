@@ -1,6 +1,6 @@
 # Fogchan CLI
 
-Command-line tool for Fogchan end-to-end encrypted ephemeral chat. Interacts directly with the Fogchan API.
+Command-line tool for Fogchan client-side encrypted ephemeral chat. Interacts directly with the Fogchan API.
 
 ## Installation
 

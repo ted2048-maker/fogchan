@@ -1,7 +1,7 @@
 {
   "name": "fogchan",
-  "version": "1.0.7",
-  "description": "CLI tool for Fogchan end-to-end encrypted chat",
+  "version": "1.0.8",
+  "description": "CLI tool for Fogchan client-side encrypted chat",
   "main": "dist/index.js",
   "bin": {
     "fogchan": "./dist/index.js"
@@ -13,7 +13,7 @@
   "keywords": [
     "chat",
     "cli",
-    "e2e",
+    "client-side",
     "encryption",
     "ephemeral",
     "fogchan"
