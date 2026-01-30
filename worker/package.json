@@ -1,0 +1,20 @@
+{
+  "name": "fogchan-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create fogchan-db",
+    "db:init": "wrangler d1 execute fogchan-db --file=./src/db/schema.sql",
+    "db:init:local": "wrangler d1 execute fogchan-db --local --file=./src/db/schema.sql"
+  },
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.24.0"
+  }
+}

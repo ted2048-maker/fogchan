@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*/dist/
+.wrangler/
+*/.wrangler/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Environment and secrets
+.env
+.env.*
+.env.local
+.env.*.local
+.dev.vars
+*.pem
+*.key
+
+# Cloudflare
+.wrangler/
+wrangler.toml
+
+# Claude Code local settings
+.claude/
+
+# Local database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/

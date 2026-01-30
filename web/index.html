@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fogchan - Private Ephemeral Chat</title>
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+  <!-- Home View -->
+  <div id="home-view" class="container" style="display: none;">
+    <header>
+      <h1>Fogchan</h1>
+      <p class="subtitle">Private, ephemeral, zero-access chat</p>
+    </header>
+
+    <main class="home">
+      <div class="features">
+        <div class="feature">
+          <span class="icon">👁️‍🗨️</span>
+          <h3>No One Can Read</h3>
+          <p>Not even us. The server only sees encrypted gibberish - your key never leaves your device.</p>
+        </div>
+        <div class="feature">
+          <span class="icon">💨</span>
+          <h3>Messages Vanish</h3>
+          <p>Everything disappears. 1 hour of silence clears the room. 30 days and it's gone forever.</p>
+        </div>
+        <div class="feature">
+          <span class="icon">🔗</span>
+          <h3>One Link, Full Access</h3>
+          <p>Share the link to grant access. No accounts, no sign-ups, no traces left behind.</p>
+        </div>
+      </div>
+
+      <button id="createRoom" class="btn-primary">Create Room</button>
+
+      <div class="join-section">
+        <p>Or paste a link to join an existing room</p>
+        <div class="join-form">
+          <input type="text" id="joinUrl" placeholder="Paste room link">
+          <button id="joinRoom" class="btn-secondary">Join</button>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Your conversation exists only for those who have the link.</p>
+    </footer>
+  </div>
+
+  <!-- Chat View -->
+  <div id="chat-view" class="chat-container" style="display: none;">
+    <header class="chat-header">
+      <div class="header-left">
+        <a href="#/" class="logo">Fogchan</a>
+        <span class="room-status" id="roomStatus">Connecting...</span>
+      </div>
+      <div class="header-right">
+        <span class="expires-at" id="expiresAt"></span>
+        <button id="copyLink" class="btn-text">Copy URL</button>
+        <button id="clearChat" class="btn-text btn-text-danger">Clear history</button>
+      </div>
+    </header>
+
+    <div class="error-banner" id="errorBanner" style="display: none;">
+      <span id="errorMessage"></span>
+      <button id="closeError" class="btn-close">×</button>
+    </div>
+
+    <main class="chat-messages" id="messages">
+      <!-- Messages will be rendered here -->
+    </main>
+
+    <footer class="chat-input">
+      <div class="message-section" id="messageSection">
+        <span class="current-nickname" id="currentNickname"></span>
+        <input type="text" id="messageInput" placeholder="Type a message..." maxlength="2000" disabled>
+        <button id="sendMessage" class="btn-primary" disabled>Send</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Nickname Modal -->
+  <div class="modal" id="nicknameModal" style="display: none;">
+    <div class="modal-content">
+      <h3>Enter your nickname</h3>
+      <p>This will be visible to others in the room.</p>
+      <input type="text" id="nickname" class="modal-input" placeholder="Nickname" maxlength="20" autofocus>
+      <div class="modal-actions">
+        <button id="setNickname" class="btn-primary">Join Chat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clear Modal -->
+  <div class="modal" id="clearModal" style="display: none;">
+    <div class="modal-content">
+      <h3>Clear chat history?</h3>
+      <p>This action cannot be undone. All messages will be deleted for everyone.</p>
+      <div class="modal-actions">
+        <button id="cancelClear" class="btn-secondary">Cancel</button>
+        <button id="confirmClear" class="btn-danger">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

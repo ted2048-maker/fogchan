@@ -1,0 +1,26 @@
+{
+  "name": "fogchan",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End-to-end encrypted ephemeral chat system",
+  "scripts": {
+    "build": "npm run build:shared && npm run build:worker && npm run build:web && npm run build:sdk && npm run build:cli",
+    "build:shared": "cd shared && npm run build",
+    "build:worker": "echo 'Worker is built by wrangler'",
+    "build:web": "cd web && npm run build",
+    "build:sdk": "cd sdk && npm run build",
+    "build:cli": "cd cli && npm run build",
+    "dev:worker": "cd worker && npm run dev",
+    "dev:web": "cd web && npm run dev",
+    "install:all": "npm install && cd shared && npm install && cd ../worker && npm install && cd ../web && npm install && cd ../sdk && npm install && cd ../cli && npm install",
+    "deploy:worker": "cd worker && npm run deploy",
+    "deploy:web": "cd web && npm run deploy"
+  },
+  "workspaces": [
+    "shared",
+    "worker",
+    "web",
+    "sdk",
+    "cli"
+  ]
+}

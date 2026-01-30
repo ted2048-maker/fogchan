@@ -1,0 +1,35 @@
+{
+  "name": "fogchan",
+  "version": "1.0.0",
+  "description": "CLI tool for Fogchan end-to-end encrypted chat",
+  "main": "dist/index.js",
+  "bin": {
+    "fogchan": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --dts",
+    "dev": "tsup src/index.ts --format cjs --watch"
+  },
+  "keywords": [
+    "chat",
+    "cli",
+    "e2e",
+    "encryption",
+    "ephemeral",
+    "fogchan"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.0.0",
+    "readline": "^1.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist"
+  ]
+}
