@@ -144,6 +144,10 @@ program
 
     rl.on('line', (line) => {
       const content = line.trim();
+
+      // Move up one line and clear it (remove the typed input)
+      process.stdout.write('\x1b[1A\x1b[K');
+
       if (!content) {
         rl!.prompt();
         return;
