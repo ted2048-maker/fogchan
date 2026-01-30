@@ -32,7 +32,26 @@ function formatTime(timestamp: number): string {
 program
   .name('fogchan')
   .description('Fogchan - End-to-end encrypted ephemeral chat CLI')
-  .version('1.0.0');
+  .version('1.0.4')
+  .addHelpText('after', `
+Common Options:
+  -s, --server <url>    API server URL (default: ${DEFAULT_SERVER})
+  -n, --name <name>     Your nickname (default: ${DEFAULT_NAME})
+  -l, --limit <number>  Number of messages to fetch (history command)
+  -y, --yes             Skip confirmation prompt (clear command)
+
+Examples:
+  $ fogchan create
+  $ fogchan join <roomId> <secretKey> --name "Alice"
+  $ fogchan send <roomId> <secretKey> "Hello!" --name "Bot"
+  $ fogchan listen <roomId> <secretKey>
+  $ fogchan history <roomId> <secretKey> --limit 100
+
+Environment Variables:
+  FOGCHAN_SERVER         Default API server URL
+  FOGCHAN_DEFAULT_NAME   Default nickname
+  FOGCHAN_POLL_INTERVAL  Polling interval in ms (default: 5000)
+`);
 
 // Create room
 program
