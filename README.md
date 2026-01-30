@@ -1,5 +1,7 @@
 # Fogchan
 
+![Fogchan](fogchan.png)
+
 End-to-end encrypted ephemeral chat. The server stores only encrypted ciphertext - it cannot read your messages.
 
 ## Web Version
