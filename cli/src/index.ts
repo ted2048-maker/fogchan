@@ -35,7 +35,6 @@ program
   .version('1.0.4')
   .addHelpText('after', `
 Common Options:
-  -s, --server <url>    API server URL (default: ${DEFAULT_SERVER})
   -n, --name <name>     Your nickname (default: ${DEFAULT_NAME})
   -l, --limit <number>  Number of messages to fetch (history command)
   -y, --yes             Skip confirmation prompt (clear command)
@@ -48,7 +47,6 @@ Examples:
   $ fogchan history <roomId> <secretKey> --limit 100
 
 Environment Variables:
-  FOGCHAN_SERVER         Default API server URL
   FOGCHAN_DEFAULT_NAME   Default nickname
   FOGCHAN_POLL_INTERVAL  Polling interval in ms (default: 5000)
 `);
