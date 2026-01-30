@@ -2,11 +2,9 @@
 
 End-to-end encrypted ephemeral chat. The server stores only encrypted ciphertext - it cannot read your messages.
 
-## Demo
+## Web Version
 
 **https://fogchat.pinit.eth.limo/**
-
-Create a room, share the link, and start chatting. No sign-up required.
 
 ## Core Concepts
 
