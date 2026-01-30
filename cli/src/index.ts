@@ -81,6 +81,19 @@ program
 
     let lastTimestamp = 0;
     const seenIds = new Set<string>();
+    let rl: readline.Interface | null = null;
+
+    // Print message and handle prompt
+    function printMessage(text: string) {
+      if (rl) {
+        // Clear current line, print message, restore prompt
+        process.stdout.write('\r\x1b[K');
+        console.log(text);
+        rl.prompt(true);
+      } else {
+        console.log(text);
+      }
+    }
 
     // Polling function
     async function poll() {
@@ -95,13 +108,13 @@ program
             const time = formatTime(msg.timestamp);
 
             if (payload.type === 'system') {
-              console.log(`\x1b[90m[${time}] ${payload.content}\x1b[0m`);
+              printMessage(`\x1b[90m[${time}] ${payload.content}\x1b[0m`);
             } else {
               const senderColor = payload.sender === name ? '\x1b[36m' : '\x1b[33m';
-              console.log(`\x1b[90m[${time}]\x1b[0m ${senderColor}${payload.sender}:\x1b[0m ${payload.content}`);
+              printMessage(`\x1b[90m[${time}]\x1b[0m ${senderColor}${payload.sender}:\x1b[0m ${payload.content}`);
             }
           } catch {
-            console.log(`\x1b[31m[${formatTime(msg.timestamp)}] Unable to decrypt message\x1b[0m`);
+            printMessage(`\x1b[31m[${formatTime(msg.timestamp)}] Unable to decrypt message\x1b[0m`);
           }
 
           seenIds.add(msg.id);
@@ -114,14 +127,14 @@ program
       }
     }
 
-    // Initial poll
+    // Initial poll (before readline is set up)
     await poll();
 
     // Start polling interval
     const pollInterval = setInterval(poll, DEFAULT_POLL_INTERVAL);
 
     // Setup readline for input
-    const rl = readline.createInterface({
+    rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
@@ -132,7 +145,7 @@ program
     rl.on('line', (line) => {
       const content = line.trim();
       if (!content) {
-        rl.prompt();
+        rl!.prompt();
         return;
       }
 
@@ -148,11 +161,13 @@ program
           const { ciphertext, iv } = await encryptMessage(payload, secretKey);
           await api.sendMessage(roomId, ciphertext, iv);
         } catch (error) {
+          process.stdout.write('\r\x1b[K');
           console.error(`\x1b[31m✗ Failed to send: ${(error as Error).message}\x1b[0m`);
+          rl!.prompt(true);
         }
       })();
 
-      rl.prompt();
+      rl!.prompt();
     });
 
     rl.on('close', () => {
