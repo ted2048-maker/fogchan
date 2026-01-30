@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- 背景 -->
+  <rect width="200" height="200" fill="#0F172A" rx="24"/>
+
+  <!-- 聊天气泡轮廓 -->
+  <path d="M45 80
+           Q45 60 65 60
+           L135 60
+           Q155 60 155 80
+           L155 120
+           Q155 140 135 140
+           L80 140
+           L65 160
+           L70 140
+           L65 140
+           Q45 140 45 120
+           Z"
+        fill="none"
+        stroke="#94A3B8"
+        stroke-width="4"/>
+
+  <!-- 三个圆点 -->
+  <circle cx="75" cy="100" r="8" fill="#E2E8F0"/>
+  <circle cx="100" cy="100" r="8" fill="#94A3B8"/>
+  <circle cx="125" cy="100" r="8" fill="#475569"/>
+
+  <!-- 上方三条雾气横线 -->
+  <line x1="60" y1="48" x2="90" y2="48" stroke="#94A3B8" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+  <line x1="85" y1="36" x2="115" y2="36" stroke="#94A3B8" stroke-width="4" stroke-linecap="round" opacity="0.35"/>
+  <line x1="110" y1="24" x2="130" y2="24" stroke="#94A3B8" stroke-width="4" stroke-linecap="round" opacity="0.15"/>
+</svg>

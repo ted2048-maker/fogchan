@@ -1,5 +1,7 @@
 # Fogchan CLI
 
+<img src="logo.svg" alt="Fogchan" width="80" height="80">
+
 Command-line tool for Fogchan client-side encrypted ephemeral chat. Interacts directly with the Fogchan API.
 
 ## Installation
