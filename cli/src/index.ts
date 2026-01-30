@@ -126,9 +126,15 @@ program
       output: process.stdout,
     });
 
+    rl.setPrompt('> ');
+    rl.prompt();
+
     rl.on('line', (line) => {
       const content = line.trim();
-      if (!content) return;
+      if (!content) {
+        rl.prompt();
+        return;
+      }
 
       // Fire and forget - don't block input
       (async () => {
@@ -145,6 +151,8 @@ program
           console.error(`\x1b[31m✗ Failed to send: ${(error as Error).message}\x1b[0m`);
         }
       })();
+
+      rl.prompt();
     });
 
     rl.on('close', () => {
