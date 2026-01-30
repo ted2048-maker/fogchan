@@ -1,6 +1,6 @@
 {
   "name": "fogchan",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "CLI tool for Fogchan client-side encrypted chat",
   "main": "dist/index.js",
   "bin": {
@@ -20,6 +20,9 @@
   ],
   "author": "ted2048-maker",
   "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/ted2048-maker/fogchan.git"
