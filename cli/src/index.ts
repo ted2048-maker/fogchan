@@ -46,7 +46,7 @@ function formatSender(sender: string, fingerprint?: string, verified?: boolean):
 program
   .name('fogchan')
   .description('Fogchan - Client-side encrypted ephemeral chat CLI')
-  .version('1.0.15')
+  .version('1.0.16')
   .addHelpText('after', `
 Common Options:
   -n, --name <name>     Your nickname (default: ${DEFAULT_NAME})

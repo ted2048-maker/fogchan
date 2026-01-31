@@ -1,6 +1,6 @@
 {
   "name": "fogchan",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "CLI tool for Fogchan client-side encrypted chat",
   "main": "dist/index.js",
   "bin": {
