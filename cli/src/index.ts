@@ -35,17 +35,18 @@ function formatTime(timestamp: number): string {
 }
 
 function formatSender(sender: string, fingerprint?: string, verified?: boolean): string {
+  const verifyIcon = verified ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m';
   if (fingerprint) {
-    const verifyIcon = verified ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m';
     return `${sender} \x1b[90m[${fingerprint}]\x1b[0m ${verifyIcon}`;
   }
-  return sender;
+  // No signature - show red ✗
+  return `${sender} ${verifyIcon}`;
 }
 
 program
   .name('fogchan')
   .description('Fogchan - Client-side encrypted ephemeral chat CLI')
-  .version('1.0.12')
+  .version('1.0.15')
   .addHelpText('after', `
 Common Options:
   -n, --name <name>     Your nickname (default: ${DEFAULT_NAME})
@@ -195,15 +196,20 @@ program
     rl.on('line', (line) => {
       const content = line.trim();
 
-      // Move up one line and clear it (remove the typed input)
-      process.stdout.write('\x1b[1A\x1b[K');
+      // Clear the user input line and stay there (no empty line)
+      process.stdout.write('\x1b[1A\x1b[2K\r');
 
       if (!content) {
         rl!.prompt();
         return;
       }
 
-      // Fire and forget - don't block input
+      // Optimistic UI: show message immediately
+      const time = formatTime(Date.now());
+      const senderDisplay = formatSender(name, myFingerprint, true);
+      printMessage(`\x1b[90m[${time}]\x1b[0m \x1b[36m${senderDisplay}:\x1b[0m ${content}`);
+
+      // Send in background
       (async () => {
         try {
           const payload = await createSignedPayload(
@@ -215,15 +221,17 @@ program
           );
 
           const { ciphertext, iv } = await encryptMessage(payload, secretKey);
-          await api.sendMessage(roomId, ciphertext, iv);
+          const result = await api.sendMessage(roomId, ciphertext, iv);
+
+          // Mark as seen so polling won't show it again
+          seenIds.add(result.id);
+          if (result.timestamp > lastTimestamp) {
+            lastTimestamp = result.timestamp;
+          }
         } catch (error) {
-          process.stdout.write('\r\x1b[K');
-          console.error(`\x1b[31m✗ Failed to send: ${(error as Error).message}\x1b[0m`);
-          rl!.prompt(true);
+          printMessage(`\x1b[31m✗ Failed to send "${content}": ${(error as Error).message}\x1b[0m`);
         }
       })();
-
-      rl!.prompt();
     });
 
     rl.on('close', () => {

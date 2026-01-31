@@ -55,6 +55,8 @@ let confirmClearBtn: HTMLButtonElement;
 let nicknameModal: HTMLDivElement;
 let nicknameInput: HTMLInputElement;
 let setNicknameBtn: HTMLButtonElement;
+let welcomeGuide: HTMLDivElement;
+let copyUrlGuideBtn: HTMLButtonElement;
 
 let listenersAttached = false;
 
@@ -84,9 +86,30 @@ export async function initChat(newRoomId: string, newSecretKey: string) {
   nicknameModal = document.getElementById('nicknameModal') as HTMLDivElement;
   nicknameInput = document.getElementById('nickname') as HTMLInputElement;
   setNicknameBtn = document.getElementById('setNickname') as HTMLButtonElement;
+  welcomeGuide = document.getElementById('welcomeGuide') as HTMLDivElement;
+  copyUrlGuideBtn = document.getElementById('copyUrlGuide') as HTMLButtonElement;
 
-  // Reset UI
-  messagesContainer.innerHTML = '';
+  // Reset UI - keep welcome guide
+  const welcomeGuideHtml = welcomeGuide.outerHTML;
+  messagesContainer.innerHTML = welcomeGuideHtml;
+  welcomeGuide = document.getElementById('welcomeGuide') as HTMLDivElement;
+  copyUrlGuideBtn = document.getElementById('copyUrlGuide') as HTMLButtonElement;
+
+  // Bind copy button in welcome guide
+  copyUrlGuideBtn.addEventListener('click', async () => {
+    if (!roomId || !secretKey) return;
+    try {
+      const url = buildUrl(roomId, secretKey);
+      await navigator.clipboard.writeText(url);
+      copyUrlGuideBtn.textContent = 'Copied!';
+      setTimeout(() => {
+        copyUrlGuideBtn.textContent = 'Copy Room Link';
+      }, 2000);
+    } catch {
+      alert('Copy failed. Please copy the URL manually.');
+    }
+  });
+
   errorBanner.style.display = 'none';
   roomStatus.textContent = 'Connecting...';
   roomStatus.className = 'room-status';
@@ -187,8 +210,14 @@ async function poll() {
 
     // If server has no messages but we have local messages, clear them
     if (messageCount === 0 && displayedMessages.size > 0) {
-      messagesContainer.innerHTML = '';
-      displayedMessages.clear();
+      // Remove messages but keep welcome guide
+      const messageElements = messagesContainer.querySelectorAll('.message');
+      messageElements.forEach(m => m.remove());
+      displayedMessages.clear()
+      // Show welcome guide again
+      if (welcomeGuide) {
+        welcomeGuide.style.display = 'flex';
+      };
       lastTimestamp = 0;
       return;
     }
@@ -226,6 +255,11 @@ async function poll() {
 }
 
 function renderMessage(msg: DisplayMessage, status?: 'sending' | 'sent' | 'failed') {
+  // Hide welcome guide when messages appear
+  if (welcomeGuide && welcomeGuide.parentNode) {
+    welcomeGuide.style.display = 'none';
+  }
+
   const div = document.createElement('div');
   div.dataset.messageId = msg.id;
   // Identify by fingerprint (public key hash), not by nickname
@@ -253,21 +287,21 @@ function renderMessage(msg: DisplayMessage, status?: 'sending' | 'sent' | 'faile
     senderName.textContent = msg.sender;
     senderContainer.appendChild(senderName);
 
-    // Fingerprint badge
+    // Fingerprint badge (if available)
     if (msg.fingerprint) {
       const fingerprint = document.createElement('span');
       fingerprint.className = 'message-fingerprint';
       fingerprint.textContent = `[${msg.fingerprint}]`;
       fingerprint.title = 'Identity fingerprint';
       senderContainer.appendChild(fingerprint);
-
-      // Verification icon
-      const verifyIcon = document.createElement('span');
-      verifyIcon.className = msg.verified ? 'verify-icon verified' : 'verify-icon unverified';
-      verifyIcon.textContent = msg.verified ? '✓' : '✗';
-      verifyIcon.title = msg.verified ? 'Signature verified' : 'Signature invalid';
-      senderContainer.appendChild(verifyIcon);
     }
+
+    // Verification icon (always show - red ✗ for unsigned or failed verification)
+    const verifyIcon = document.createElement('span');
+    verifyIcon.className = msg.verified ? 'verify-icon verified' : 'verify-icon unverified';
+    verifyIcon.textContent = msg.verified ? '✓' : '✗';
+    verifyIcon.title = msg.verified ? 'Signature verified' : (msg.fingerprint ? 'Signature invalid' : 'No signature');
+    senderContainer.appendChild(verifyIcon);
 
     const headerRight = document.createElement('div');
     headerRight.className = 'message-header-right';
@@ -479,10 +513,16 @@ function setupEventListeners() {
     if (!roomId) return;
     try {
       await clearMessages(roomId);
-      messagesContainer.innerHTML = '';
       displayedMessages.clear();
       lastTimestamp = 0;
       clearModal.style.display = 'none';
+      // Show welcome guide again
+      if (welcomeGuide) {
+        welcomeGuide.style.display = 'flex';
+      }
+      // Remove all messages but keep welcome guide
+      const messages = messagesContainer.querySelectorAll('.message');
+      messages.forEach(m => m.remove());
     } catch (error) {
       alert('Failed to clear: ' + (error as Error).message);
     }

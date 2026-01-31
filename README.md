@@ -8,14 +8,14 @@ Client-side encrypted ephemeral chat. The server stores only encrypted ciphertex
 
 ## Web Version
 
-**https://fogchat.pinit.eth.limo/**
+**https://fogchan.pinit.eth.limo/**
 
 ## Core Concepts
 
 ### URL Structure
 
 ```
-https://fogchat.pinit.eth.limo/#/chat/{roomId}/{secretKey}
+https://fogchan.pinit.eth.limo/#/chat/{roomId}/{secretKey}
 ```
 
 | Component | Format | Purpose |
@@ -281,8 +281,8 @@ const parsed = CryptoUtils.parseUrl('https://.../#/chat/roomId/secretKey');
 // Returns { roomId, secretKey } or null
 
 // Build a shareable URL
-const url = CryptoUtils.buildUrl('https://fogchat.pinit.eth.limo', roomId, secretKey);
-// Returns 'https://fogchat.pinit.eth.limo/#/chat/{roomId}/{secretKey}'
+const url = CryptoUtils.buildUrl('https://fogchan.pinit.eth.limo', roomId, secretKey);
+// Returns 'https://fogchan.pinit.eth.limo/#/chat/{roomId}/{secretKey}'
 ```
 
 ## Development

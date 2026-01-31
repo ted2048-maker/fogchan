@@ -1,6 +1,6 @@
 {
   "name": "fogchan",
-  "version": "1.0.12",
+  "version": "1.0.15",
   "description": "CLI tool for Fogchan client-side encrypted chat",
   "main": "dist/index.js",
   "bin": {
@@ -27,7 +27,7 @@
     "type": "git",
     "url": "https://github.com/ted2048-maker/fogchan.git"
   },
-  "homepage": "https://fogchat.pinit.eth.limo/",
+  "homepage": "https://fogchan.pinit.eth.limo/",
   "dependencies": {
     "commander": "^12.0.0",
     "readline": "^1.3.0"
